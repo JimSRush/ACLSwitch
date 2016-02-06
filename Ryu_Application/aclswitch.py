@@ -367,6 +367,7 @@ class ACLSwitch(app_manager.RyuApp):
     def _create_match(self, rule):
         match = ofp13_parser.OFPMatch()
         ip_version = self._return_ip_version(rule.ip_src, rule.ip_dst)
+        blah = rule.ip
         # Match IP layer (layer 3)
         if ip_version == 4:
             # Match IPv4
