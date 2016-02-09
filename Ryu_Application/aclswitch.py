@@ -848,21 +848,21 @@ class ACLSwitch(app_manager.RyuApp):
         datapath.send_msg(mod)
 
     # Methods handling OpenFlow events
-    def _add_flow_to_blacklist(self, datapath, priority, match):
-        parser = datapath.ofproto_parser
-        match = parser.OFPMatch(ipv4_src='10.0.0.5')
+    def _add_flow_to_blacklist(self, datapath):
         ofproto = datapath.ofproto
-        actions = None
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        parser = datapath.ofproto_parser
+        #actions = parser.OFPInstructionActions(OFPIT_CLEAR_ACTIONS)
+        match = parser.OFPMatch(ipv4_src='10.0.0.5')
 
+        actions = None
+        inst = []
         mod = parser.OFPFlowMod(datapath=datapath,
                                 hard_timeout=100,
-                                priority=priority,
+                                priority=0,
                                 match=match,
                                 flags=ofproto.OFPFF_SEND_FLOW_REM,
                                 instructions=inst,
                                 table_id=self.TABLE_ID_BLACKLIST)
-    #print(mod)
         datapath.send_msg(mod)
 
 
@@ -878,6 +878,7 @@ class ACLSwitch(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+        #self._add_flow_to_blacklist(datapath)
         # Install table-miss flow entry for the ACL flow table. No
         # buffer is used for this table-miss entry as matching flows
         # get passed onto the L2 switching flow table.
@@ -894,8 +895,7 @@ class ACLSwitch(app_manager.RyuApp):
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
         match = parser.OFPMatch()
-        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-        #                                   ofproto.OFPCML_NO_BUFFER)]
+
         actions = None
         self._add_flow(datapath, 0, match, actions, table_id=self.TABLE_ID_WHITELIST)
         print("Added Whitelist miss flow entry")
