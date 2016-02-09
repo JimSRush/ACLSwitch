@@ -814,7 +814,6 @@ class ACLSwitch(app_manager.RyuApp):
     @param buffer_id - identifier of buffer queue if traffic is being
                        buffered.
     """
-
     def _add_flow(self, datapath, priority, match, actions,
                   buffer_id=None, time_limit=0, table_id=1):
         ofproto = datapath.ofproto
@@ -849,6 +848,24 @@ class ACLSwitch(app_manager.RyuApp):
         datapath.send_msg(mod)
 
     # Methods handling OpenFlow events
+    def _add_flow_to_blacklist(self, datapath, priority, match):
+        parser = datapath.ofproto_parser
+        match = parser.OFPMatch(ipv4_src='10.0.0.5')
+        ofproto = datapath.ofproto
+        actions = None
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+
+        mod = parser.OFPFlowMod(datapath=datapath,
+                                hard_timeout=100,
+                                priority=priority,
+                                match=match,
+                                flags=ofproto.OFPFF_SEND_FLOW_REM,
+                                instructions=inst,
+                                table_id=self.TABLE_ID_BLACKLIST)
+    #print(mod)
+        datapath.send_msg(mod)
+
+
 
 
     """
