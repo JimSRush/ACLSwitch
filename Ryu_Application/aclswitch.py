@@ -83,9 +83,11 @@ class ACLSwitch(app_manager.RyuApp):
     # Default priority is defined to be in the middle (0x8000 in 1.3)
     # Note that for a priority p, 0 <= p <= MAX (i.e. 65535)
     POLICY_DEFAULT = "default"
+    TABLE_ID_BLACKLIST = 0
+    TABLE_ID_WHITELIST = 1
+    TABLE_ID_ACL = 2
+    TABLE_ID_L2 = 3
 
-    TABLE_ID_ACL = 0
-    TABLE_ID_L2 = 1
 
     TIME_PAUSE = 1  # In seconds
 
@@ -813,14 +815,20 @@ class ACLSwitch(app_manager.RyuApp):
                        buffered.
     """
 
-    def _add_flow(self, datapath, priority, match, actions,
-                  buffer_id=None, time_limit=0, table_id=1):
+    def _add_flow(self, datapath, priority, match, actions, table_id,
+                  buffer_id=None, time_limit=0):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        if (actions == None):
-            # catch the moment where the flow tables are being linked up
+        if (table_id == self.TABLE_ID_BLACKLIST and actions == None):
+            inst = [parser.OFPInstructionGotoTable(self.TABLE_ID_WHITELIST)]
+            print("Adding goto instruction to Whitelist")
+        elif (table_id == self.TABLE_ID_WHITELIST and actions == None):
+            inst = [parser.OFPInstructionGotoTable(self.TABLE_ID_ACL)]
+            print ("Adding goto instruction to ACL")
+        elif (table_id == self.TABLE_ID_ACL and actions == None):
             inst = [parser.OFPInstructionGotoTable(self.TABLE_ID_L2)]
+            print("Adding goto instruction to L2 table")
         else:
             inst = [
                 parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
@@ -842,6 +850,7 @@ class ACLSwitch(app_manager.RyuApp):
 
     # Methods handling OpenFlow events
 
+
     """
     Event handler used when a switch connects to the controller.
     """
@@ -858,8 +867,8 @@ class ACLSwitch(app_manager.RyuApp):
         match = parser.OFPMatch()
         actions = None  # no action required for forwarding to another table
         self._add_flow(datapath, 0, match, actions,
-                       table_id=self.TABLE_ID_ACL)
-
+                       table_id=self.TABLE_ID_BLACKLIST)
+        print("Added blacklist table miss flow entry")
         # Install table-miss flow entry for the L2 switching flow table.
         #
         # We specify NO BUFFER to max_len of the output action due to
@@ -868,9 +877,22 @@ class ACLSwitch(app_manager.RyuApp):
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
         match = parser.OFPMatch()
+        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+        #                                   ofproto.OFPCML_NO_BUFFER)]
+        actions = None
+        self._add_flow(datapath, 0, match, actions, table_id=self.TABLE_ID_WHITELIST)
+        print("Added Whitelist miss flow entry")
+
+        match = parser.OFPMatch()
+        actions = None
+        self._add_flow(datapath, 0, match, actions, table_id=self.TABLE_ID_ACL)
+        print("Added ACL missflow entry")
+
+        match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
                                           ofproto.OFPCML_NO_BUFFER)]
-        self._add_flow(datapath, 0, match, actions)
+        self._add_flow(datapath, 0, match, actions, table_id=self.TABLE_ID_L2)
+        print("Added L2 flow entry, send to the controller")
 
         # The code below has been added by Jarrod N. Bakker
         # Take note of switches (via their datapaths)
@@ -900,6 +922,7 @@ class ACLSwitch(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
+        print("hey")
         # If you hit this you might want to increase
         # the "miss_send_length" of your switch
         if ev.msg.msg_len < ev.msg.total_len:
@@ -945,10 +968,10 @@ class ACLSwitch(app_manager.RyuApp):
             # flow_mod & packet_out
             if msg.buffer_id != ofproto.OFP_NO_BUFFER:
                 self._add_flow(datapath, priority, match, actions,
-                               msg.buffer_id)
+                               msg.buffer_id, self.TABLE_ID_L2)
                 return
             else:
-                self._add_flow(datapath, priority, match, actions)
+                self._add_flow(datapath, priority, match, actions, self.TABLE_ID_L2)
 
         data = None
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
