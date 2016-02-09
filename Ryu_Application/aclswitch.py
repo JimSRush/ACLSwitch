@@ -815,8 +815,8 @@ class ACLSwitch(app_manager.RyuApp):
                        buffered.
     """
 
-    def _add_flow(self, datapath, priority, match, actions, table_id,
-                  buffer_id=None, time_limit=0):
+    def _add_flow(self, datapath, priority, match, actions,
+                  buffer_id=None, time_limit=0, table_id=1):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
