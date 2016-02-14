@@ -145,7 +145,7 @@ class ACLSwitch(app_manager.RyuApp):
                 rule = config["rule"]
                 self.acl_rule_add(rule["ip_src"], rule["ip_dst"],
                                   rule["tp_proto"], rule["port_src"],
-                                  rule["port_dst"], rule["policy"])
+                                  rule["port_dst"], rule["policy"], rule["dst_list"])
             elif "policy" in config:
                 self.policy_create(config["policy"])
             elif "rule_time" in config:
@@ -488,7 +488,8 @@ class ACLSwitch(app_manager.RyuApp):
     """
 
     def acl_rule_add(self, ip_src, ip_dst, tp_proto, port_src, port_dst,
-                     policy, time_start="N/A", time_duration="N/A"):
+                     policy, dst_list, time_start="N/A", time_duration="N/A"):
+        print("adding rule in controller")
         syntax_results = self._acl_rule_syntax_check(ip_src, ip_dst,
                                                      tp_proto, port_src,
                                                      port_dst)
@@ -689,6 +690,7 @@ class ACLSwitch(app_manager.RyuApp):
     """
 
     def _distribute_single_rule(self, rule):
+        print("Trying to distrubute a single rule")
         for switch in self._connected_switches:
             switch_policies = self._connected_switches[switch]
             if rule.policy not in switch_policies:
