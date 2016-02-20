@@ -219,6 +219,61 @@ class ACLSwitchREST(ControllerBase):
             return Response(status=400, body=result[1])
         return Response(status=200, body=result[1])
 
+<<<<<<< HEAD
+=======
+
+    """
+    API call to add a rule for the blacklist to the ACL.
+    """
+
+    @route("acl_switch", url+"/acl_rules/blacklist", methods=["POST"])
+    def acl_rule_add_blacklist(self, req, **kwargs):
+	try:
+            ruleReq = json.loads(req.body)
+	except:
+	    return Response(status=400, body="Unable to parse JSON.")
+        if not self.check_rule_time_json(ruleReq):
+            return Response(status=400, body="Invalid JSON passed.")
+	result = self.acl_switch_inst.acl_rule_add(ruleReq["ip_src"],
+						   ruleReq["ip_dst"],
+						   ruleReq["tp_proto"],
+						   ruleReq["port_src"],
+						   ruleReq["port_dst"],
+						   ruleReq["policy"],
+						   ruleReq["blacklist"])
+
+        if result[0] == False:
+            return Response(status=400, body=result[1])
+        return Response(status=200, body=result[1])
+
+    """
+    API call to add a rule for the whitelist to the ACL.
+    """
+
+    @route("acl_switch", url+"/acl_rules/whitelist", methods=["POST"])
+    def acl_rule_add_blacklist(self, req, **kwargs):
+        try:
+            ruleReq = json.loads(req.body)
+        except:
+            return Response(status=400, body="Unable to parse JSON.")
+        if not self.check_rule_time_json(ruleReq):
+            return Response(status=400, body="Invalid JSON passed.")
+        result = self.acl_switch_inst.acl_rule_add(ruleReq["ip_src"],
+                                                   ruleReq["ip_dst"],
+                                                   ruleReq["tp_proto"],
+                                                   ruleReq["port_src"],
+                                                   ruleReq["port_dst"],
+                                                   ruleReq["policy"],
+                                                   ruleReq["whitelist"])
+
+        if result[0] == False:
+            return Response(status=400, body=result[1])
+        return Response(status=200, body=result[1])
+
+
+
+
+>>>>>>> 8ceaa4a20aae8cfd7dc258a459b129943f83ed2e
     """
     API call to remove a rule from the ACL.
     """

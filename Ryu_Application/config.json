@@ -17,3 +17,14 @@
 #
 
 
+<<<<<<< HEAD
+=======
+# To specify a rule for a blacklist or whitelist entry:
+#   {"list":{"ip_src":"", "ip_dst":"", "tp_proto":"", "port_src":"", "port_dst":"", "policy":"", "rule_list":""}}
+#  
+
+{"rule":{"ip_src":"10.0.0.1", "ip_dst":"10.0.0.2", "tp_proto":"*", "port_src":"*", "port_dst":"*", "policy":"default","rule_list":"whitelist"}}
+
+{"rule":{"ip_src":"10.0.0.2", "ip_dst":"10.0.0.2", "tp_proto":"*", "port_src":"*", "port_dst":"*", "policy":"default","rule_list":"blacklist"}}
+
+>>>>>>> 8ceaa4a20aae8cfd7dc258a459b129943f83ed2e
